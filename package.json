@@ -6,7 +6,7 @@
     "start": "node ./bin/www",
     "dev": "nodemon ./bin/www",
     "test-api": "node test-api.js",
-    "build": "npm install --production",
+    "build": "rm -f package-lock.json && npm install --omit=dev",
     "start:prod": "NODE_ENV=production node ./bin/www",
     "prod": "npm run build && npm run start:prod"
   },
@@ -25,7 +25,6 @@
     "morgan": "~1.9.1"
   },
   "engines": {
-    "node": ">=14.0.0",
-    "npm": ">=6.0.0"
+    "node": "18.x"
   }
 }
