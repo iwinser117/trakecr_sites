@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ejemplo de Integración - Tracker Sites</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #667eea;
+        }
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            color: #c7254e;
+        }
+        pre {
+            background: #282c34;
+            color: #abb2bf;
+            padding: 20px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        .success {
+            padding: 15px;
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            border-radius: 5px;
+            margin-top: 20px;
+            display: none;
+        }
+        .error {
+            padding: 15px;
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            border-radius: 5px;
+            margin-top: 20px;
+            display: none;
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+        button:hover {
+            background: #5568d3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 Ejemplo de Integración</h1>
+        <p>Esta página demuestra cómo integrar el tracker en tu sitio web.</p>
+
+        <h2>Paso 1: Incluir el script</h2>
+        <p>Copia este código en el <code>&lt;head&gt;</code> o antes del <code>&lt;/body&gt;</code> de tu HTML:</p>
+        
+        <pre><code>&lt;script&gt;
+// Configuración del tracker
+const TRACKER_CONFIG = {
+    apiUrl: 'http://localhost:3000/api/track',
+    siteName: 'Mi Sitio Web' // Cambiar por el nombre de tu sitio
+};
+
+// Función para enviar visita
+function trackPageView() {
+    const data = {
+        siteName: TRACKER_CONFIG.siteName,
+        url: window.location.href,
+        additionalData: {
+            pageTitle: document.title,
+            referrer: document.referrer,
+            screenSize: `${window.screen.width}x${window.screen.height}`,
+            timestamp: new Date().toISOString()
+        }
+    };
+
+    fetch(TRACKER_CONFIG.apiUrl, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(result => {
+        console.log('✓ Visita registrada:', result);
+    })
+    .catch(error => {
+        console.error('✗ Error al registrar visita:', error);
+    });
+}
+
+// Enviar visita cuando la página carga
+window.addEventListener('load', trackPageView);
+&lt;/script&gt;</code></pre>
+
+        <h2>Paso 2: Probar</h2>
+        <p>Esta página ya tiene el tracker instalado. Haz clic en el botón para enviar una visita de prueba:</p>
+        
+        <button onclick="testTracker()">🚀 Enviar Visita de Prueba</button>
+        
+        <div id="success" class="success"></div>
+        <div id="error" class="error"></div>
+
+        <h2>Paso 3: Personalizar</h2>
+        <p>Puedes personalizar los datos que envías:</p>
+        
+        <pre><code>// Ejemplo con datos personalizados
+fetch('http://localhost:3000/api/track', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+        siteName: 'Mi Tienda',
+        url: window.location.href,
+        additionalData: {
+            userId: '12345',
+            productId: 'ABC123',
+            category: 'Electrónica',
+            price: 299.99,
+            // Cualquier otro dato que necesites
+        }
+    })
+});</code></pre>
+
+        <h2>Uso Avanzado</h2>
+        
+        <h3>Trackear eventos específicos:</h3>
+        <pre><code>// Al hacer clic en un botón
+document.getElementById('miBoton').addEventListener('click', () => {
+    fetch('http://localhost:3000/api/track', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            siteName: 'Mi App',
+            url: window.location.href,
+            additionalData: {
+                event: 'button_click',
+                buttonId: 'miBoton',
+                timestamp: new Date()
+            }
+        })
+    });
+});
+
+// Al enviar un formulario
+document.getElementById('miForm').addEventListener('submit', () => {
+    fetch('http://localhost:3000/api/track', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            siteName: 'Mi App',
+            url: window.location.href,
+            additionalData: {
+                event: 'form_submit',
+                formId: 'miForm'
+            }
+        })
+    });
+});</code></pre>
+
+        <h3>Trackear tiempo en la página:</h3>
+        <pre><code>let timeOnPage = 0;
+setInterval(() => {
+    timeOnPage += 30;
+}, 30000); // cada 30 segundos
+
+window.addEventListener('beforeunload', () => {
+    navigator.sendBeacon(
+        'http://localhost:3000/api/track',
+        JSON.stringify({
+            siteName: 'Mi Sitio',
+            url: window.location.href,
+            additionalData: {
+                event: 'page_leave',
+                timeOnPage: timeOnPage
+            }
+        })
+    );
+});</code></pre>
+    </div>
+
+    <script>
+        // Configuración del tracker
+        const TRACKER_CONFIG = {
+            apiUrl: 'http://localhost:3000/api/track',
+            siteName: 'Página de Ejemplo - Tracker Sites'
+        };
+
+        // Función para enviar visita
+        function trackPageView() {
+            const data = {
+                siteName: TRACKER_CONFIG.siteName,
+                url: window.location.href,
+                additionalData: {
+                    pageTitle: document.title,
+                    referrer: document.referrer,
+                    screenSize: `${window.screen.width}x${window.screen.height}`,
+                    timestamp: new Date().toISOString(),
+                    autoTracked: true
+                }
+            };
+
+            fetch(TRACKER_CONFIG.apiUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                console.log('✓ Visita registrada automáticamente:', result);
+            })
+            .catch(error => {
+                console.error('✗ Error al registrar visita:', error);
+            });
+        }
+
+        // Función para probar el tracker manualmente
+        function testTracker() {
+            const successDiv = document.getElementById('success');
+            const errorDiv = document.getElementById('error');
+            
+            successDiv.style.display = 'none';
+            errorDiv.style.display = 'none';
+
+            const data = {
+                siteName: 'Página de Ejemplo - Tracker Sites',
+                url: window.location.href,
+                additionalData: {
+                    test: true,
+                    clickedButton: true,
+                    timestamp: new Date().toISOString()
+                }
+            };
+
+            fetch(TRACKER_CONFIG.apiUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                successDiv.innerHTML = `
+                    <strong>✓ ¡Éxito!</strong><br>
+                    Visita registrada con ID: ${result.visitId}<br>
+                    Revisa el dashboard en <a href="http://localhost:3000" target="_blank">http://localhost:3000</a>
+                `;
+                successDiv.style.display = 'block';
+                console.log('Respuesta:', result);
+            })
+            .catch(error => {
+                errorDiv.innerHTML = `
+                    <strong>✗ Error</strong><br>
+                    ${error.message}<br>
+                    Asegúrate de que el servidor esté ejecutándose en http://localhost:3000
+                `;
+                errorDiv.style.display = 'block';
+                console.error('Error:', error);
+            });
+        }
+
+        // Enviar visita automática cuando la página carga
+        window.addEventListener('load', trackPageView);
+    </script>
+</body>
+</html>

@@ -1,9 +1,13 @@
 var express = require('express');
 var router = express.Router();
 
-/* GET home page. */
+/* GET home page - redirigir al login */
 router.get('/', function(req, res, next) {
-  res.render('index', { title: 'Express' });
+  if (req.session && req.session.authenticated) {
+    res.redirect('/dashboard');
+  } else {
+    res.redirect('/login');
+  }
 });
 
 module.exports = router;

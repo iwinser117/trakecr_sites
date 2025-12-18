@@ -1,0 +1,89 @@
+doctype html
+html
+  head
+    title= title
+    meta(name='viewport', content='width=device-width, initial-scale=1.0')
+    link(rel='stylesheet', href='/stylesheets/style.css')
+  body
+    .dashboard
+      header.dashboard-header
+        .header-content
+          h1 📊 Dashboard de Visitas
+          .user-info
+            span Bienvenido, #{username}
+            a.btn-logout(href='/logout') Cerrar Sesión
+      
+      .dashboard-content
+        .stats-bar
+          .stat-card
+            .stat-value= totalVisits
+            .stat-label Total de Visitas
+          
+          .stat-card
+            .stat-value= visits.length
+            .stat-label En esta página
+          
+          .stat-card
+            .stat-value= totalPages
+            .stat-label Páginas totales
+        
+        .actions-bar
+          .api-info
+            strong Endpoint: 
+            code POST /api/track
+            |  | Body: 
+            code {"siteName": "...", "url": "..."}
+          
+          form.inline-form(method='POST', action='/dashboard/clear-all', onsubmit='return confirm("¿Estás seguro de eliminar TODAS las visitas?");')
+            button.btn-danger(type='submit') 🗑️ Limpiar Todo
+        
+        .visits-table
+          if visits.length === 0
+            .no-data
+              p No hay visitas registradas aún
+              p Envía una petición POST a 
+                code /api/track 
+                |  para comenzar
+          else
+            table
+              thead
+                tr
+                  th #
+                  th Sitio
+                  th URL
+                  th IP
+                  th User Agent
+                  th Fecha/Hora
+                  th Acciones
+              tbody
+                each visit, index in visits
+                  tr
+                    td= (currentPage - 1) * 20 + index + 1
+                    td
+                      strong= visit.siteName
+                    td
+                      .url-cell= visit.url
+                    td= visit.ipAddress || 'N/A'
+                    td
+                      .user-agent= visit.userAgent || 'N/A'
+                    td= visit.timestamp.toLocaleString('es-ES')
+                    td
+                      form.inline-form(method='POST', action=`/dashboard/delete/${visit._id}`, onsubmit='return confirm("¿Eliminar esta visita?");')
+                        button.btn-delete(type='submit') ❌
+        
+        if totalPages > 1
+          .pagination
+            if currentPage > 1
+              a.page-link(href=`/dashboard?page=${currentPage - 1}`) ← Anterior
+            
+            - var startPage = Math.max(1, currentPage - 2)
+            - var endPage = Math.min(totalPages, currentPage + 2)
+            
+            each pageNum in Array.from({length: endPage - startPage + 1}, (_, i) => startPage + i)
+              if pageNum === currentPage
+                span.page-link.active= pageNum
+              else
+                a.page-link(href=`/dashboard?page=${pageNum}`)= pageNum
+            
+            if currentPage < totalPages
+              a.page-link(href=`/dashboard?page=${currentPage + 1}`) Siguiente →

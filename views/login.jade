@@ -1,0 +1,31 @@
+doctype html
+html
+  head
+    title= title
+    meta(name='viewport', content='width=device-width, initial-scale=1.0')
+    link(rel='stylesheet', href='/stylesheets/style.css')
+  body
+    .login-container
+      .login-box
+        h1 🔐 Tracker Sites
+        h2 Iniciar Sesión
+        
+        if error
+          .error-message= error
+        
+        form(method='POST', action='/login')
+          .form-group
+            label(for='username') Usuario
+            input#username(type='text', name='username', required, autofocus)
+          
+          .form-group
+            label(for='password') Contraseña
+            input#password(type='password', name='password', required)
+          
+          button.btn-login(type='submit') Ingresar
+        
+        .info-box
+          p 
+            strong Endpoint API: 
+            code POST /api/track
+          p Usa este endpoint para enviar visitas desde tus aplicaciones
