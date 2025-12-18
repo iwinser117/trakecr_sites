@@ -16,7 +16,10 @@ var dashboardRouter = require('./routes/dashboard');
 var app = express();
 
 // Conectar a MongoDB
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/tracker_sites')
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/tracker_sites', {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+})
 .then(() => console.log('✓ Conectado a MongoDB'))
 .catch(err => console.error('✗ Error al conectar a MongoDB:', err));
 
