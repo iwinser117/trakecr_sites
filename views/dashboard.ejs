@@ -138,11 +138,55 @@
             background: #c82333;
         }
 
+        .btn-outline {
+            background: white;
+            color: #495057;
+            padding: 10px 20px;
+            border: 1px solid #cfd6e4;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .btn-outline:hover {
+            border-color: #667eea;
+            color: #667eea;
+        }
+
+        .select-all {
+            transform: scale(1.05);
+            cursor: pointer;
+        }
+
+        .row-check {
+            transform: scale(1.05);
+            cursor: pointer;
+        }
+
         .visits-table {
             background: white;
             border-radius: 10px;
             overflow: hidden;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .table-shell {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .table-shell::-webkit-scrollbar {
+            height: 10px;
+        }
+
+        .table-shell::-webkit-scrollbar-thumb {
+            background: #c9d2e3;
+            border-radius: 999px;
+        }
+
+        .table-shell::-webkit-scrollbar-track {
+            background: #f2f4f8;
         }
 
         .no-data {
@@ -166,6 +210,7 @@
         table {
             width: 100%;
             border-collapse: collapse;
+            min-width: 980px;
         }
 
         thead {
@@ -178,6 +223,31 @@
             font-weight: 600;
             color: #555;
             border-bottom: 2px solid #e9ecef;
+            position: sticky;
+            top: 0;
+            background: #f8f9fa;
+            z-index: 1;
+        }
+
+        .filters th {
+            background: #ffffff;
+            border-bottom: 1px solid #e9ecef;
+            padding: 10px 12px;
+        }
+
+        .filter-input {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid #d6dbe6;
+            border-radius: 6px;
+            font-size: 0.85em;
+            background: #fbfcff;
+        }
+
+        .filter-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.15);
         }
 
         td {
@@ -276,6 +346,10 @@
             th, td {
                 padding: 10px 8px;
             }
+
+            .filters th {
+                padding: 8px;
+            }
         }
     </style>
 </head>
@@ -317,9 +391,17 @@
                     <code>{"siteName": "...", "url": "..."}</code>
                 </div>
                 
-                <form class="inline-form" method="POST" action="/dashboard/clear-all" onsubmit="return confirm('¿Estás seguro de eliminar TODAS las visitas?');">
-                    <button class="btn-danger" type="submit">🗑️ Limpiar Todo</button>
-                </form>
+                <div>
+                    <form id="deleteSelectedForm" class="inline-form" method="POST" action="/dashboard/delete-selected" onsubmit="return false;">
+                        <button class="btn-outline" type="submit">✅ Eliminar seleccionadas</button>
+                    </form>
+                    <form id="deleteFilteredForm" class="inline-form" method="POST" action="/dashboard/delete-filtered" onsubmit="return false;">
+                        <button class="btn-outline" type="submit">🧹 Eliminar filtradas</button>
+                    </form>
+                    <form class="inline-form" method="POST" action="/dashboard/clear-all" onsubmit="return confirm('¿Estás seguro de eliminar TODAS las visitas?');">
+                        <button class="btn-danger" type="submit">🗑️ Limpiar Todo</button>
+                    </form>
+                </div>
             </div>
             
             <div class="visits-table">
@@ -329,40 +411,54 @@
                         <p>Envía una petición POST a <code>/api/track</code> para comenzar</p>
                     </div>
                 <% } else { %>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>Sitio</th>
-                                <th>URL</th>
-                                <th>IP</th>
-                                <th>User Agent</th>
-                                <th>Fecha/Hora</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <% visits.forEach((visit, index) => { %>
+                    <div class="table-shell">
+                        <table id="visitsTable">
+                            <thead>
                                 <tr>
-                                    <td><%= (currentPage - 1) * 20 + index + 1 %></td>
-                                    <td><strong><%= visit.siteName %></strong></td>
-                                    <td>
-                                        <div class="url-cell"><%= visit.url %></div>
-                                    </td>
-                                    <td><%= visit.ipAddress || 'N/A' %></td>
-                                    <td>
-                                        <div class="user-agent"><%= visit.userAgent || 'N/A' %></div>
-                                    </td>
-                                    <td><%= visit.timestamp.toLocaleString('es-ES') %></td>
-                                    <td>
-                                        <form class="inline-form" method="POST" action="/dashboard/delete/<%= visit._id %>" onsubmit="return confirm('¿Eliminar esta visita?');">
-                                            <button class="btn-delete" type="submit">❌</button>
-                                        </form>
-                                    </td>
+                                    <th><input class="select-all" type="checkbox" aria-label="Seleccionar todo"></th>
+                                    <th>#</th>
+                                    <th>Sitio</th>
+                                    <th>URL</th>
+                                    <th>IP</th>
+                                    <th>User Agent</th>
+                                    <th>Fecha/Hora</th>
+                                    <th>Acciones</th>
                                 </tr>
-                            <% }); %>
-                        </tbody>
-                    </table>
+                                <tr class="filters">
+                                    <th></th>
+                                    <th></th>
+                                    <th><input class="filter-input" data-col="2" type="text" placeholder="Filtrar sitio"></th>
+                                    <th><input class="filter-input" data-col="3" type="text" placeholder="Filtrar URL"></th>
+                                    <th><input class="filter-input" data-col="4" type="text" placeholder="Filtrar IP"></th>
+                                    <th><input class="filter-input" data-col="5" type="text" placeholder="Filtrar agent"></th>
+                                    <th><input class="filter-input" data-col="6" type="text" placeholder="Filtrar fecha"></th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% visits.forEach((visit, index) => { %>
+                                    <tr data-visit-id="<%= visit._id %>">
+                                        <td><input class="row-check" type="checkbox" aria-label="Seleccionar fila"></td>
+                                        <td><%= (currentPage - 1) * 20 + index + 1 %></td>
+                                        <td><strong><%= visit.siteName %></strong></td>
+                                        <td>
+                                            <div class="url-cell"><%= visit.url %></div>
+                                        </td>
+                                        <td><%= (visit.ipAddress || 'N/A').replace(/^::ffff:/, '') %></td>
+                                        <td>
+                                            <div class="user-agent"><%= visit.userAgent || 'N/A' %></div>
+                                        </td>
+                                        <td class="timestamp" data-ts="<%= visit.timestamp.toISOString() %>"><%= visit.timestamp.toLocaleString('es-ES') %></td>
+                                        <td>
+                                            <form class="inline-form" method="POST" action="/dashboard/delete/<%= visit._id %>" onsubmit="return confirm('¿Eliminar esta visita?');">
+                                                <button class="btn-delete" type="submit">❌</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                <% }); %>
+                            </tbody>
+                        </table>
+                    </div>
                 <% } %>
             </div>
             
@@ -391,5 +487,159 @@
             <% } %>
         </div>
     </div>
+    <script>
+        const filterInputs = Array.from(document.querySelectorAll('.filter-input'));
+        const tableBody = document.querySelector('#visitsTable tbody');
+        const deleteFilteredForm = document.querySelector('#deleteFilteredForm');
+        const deleteSelectedForm = document.querySelector('#deleteSelectedForm');
+        const selectAll = document.querySelector('.select-all');
+
+        const normalizeTimestamps = () => {
+            const timestampCells = Array.from(document.querySelectorAll('.timestamp'));
+            timestampCells.forEach((cell) => {
+                const raw = cell.dataset.ts;
+                if (!raw) {
+                    return;
+                }
+                const parsed = new Date(raw);
+                if (Number.isNaN(parsed.getTime())) {
+                    return;
+                }
+                cell.textContent = parsed.toLocaleString('es-ES');
+            });
+        };
+
+        const applyFilters = () => {
+            if (!tableBody) {
+                return;
+            }
+            const filters = filterInputs.map((input) => ({
+                index: Number(input.dataset.col),
+                value: input.value.trim().toLowerCase(),
+            }));
+
+            Array.from(tableBody.rows).forEach((row) => {
+                const matches = filters.every((filter) => {
+                    if (!filter.value) {
+                        return true;
+                    }
+                    const cell = row.cells[filter.index];
+                    if (!cell) {
+                        return true;
+                    }
+                    return cell.textContent.toLowerCase().includes(filter.value);
+                });
+                row.style.display = matches ? '' : 'none';
+            });
+        };
+
+        const collectVisibleIds = () => {
+            if (!tableBody) {
+                return [];
+            }
+            return Array.from(tableBody.rows)
+                .filter((row) => row.style.display !== 'none')
+                .map((row) => row.dataset.visitId)
+                .filter(Boolean);
+        };
+
+        const collectSelectedIds = () => {
+            if (!tableBody) {
+                return [];
+            }
+            return Array.from(tableBody.rows)
+                .filter((row) => {
+                    const checkbox = row.querySelector('.row-check');
+                    return checkbox && checkbox.checked;
+                })
+                .map((row) => row.dataset.visitId)
+                .filter(Boolean);
+        };
+
+        const submitDeleteFiltered = () => {
+            if (!deleteFilteredForm) {
+                return;
+            }
+            const ids = collectVisibleIds();
+            if (ids.length === 0) {
+                alert('No hay filas filtradas para eliminar.');
+                return;
+            }
+            if (!confirm('¿Eliminar todas las visitas filtradas?')) {
+                return;
+            }
+            deleteFilteredForm.querySelectorAll('input[name="ids"]').forEach((node) => node.remove());
+            ids.forEach((id) => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'ids';
+                input.value = id;
+                deleteFilteredForm.appendChild(input);
+            });
+            deleteFilteredForm.submit();
+        };
+
+        const submitDeleteSelected = () => {
+            if (!deleteSelectedForm) {
+                return;
+            }
+            const ids = collectSelectedIds();
+            if (ids.length === 0) {
+                alert('No hay filas seleccionadas para eliminar.');
+                return;
+            }
+            if (!confirm('¿Eliminar todas las visitas seleccionadas?')) {
+                return;
+            }
+            deleteSelectedForm.querySelectorAll('input[name="ids"]').forEach((node) => node.remove());
+            ids.forEach((id) => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'ids';
+                input.value = id;
+                deleteSelectedForm.appendChild(input);
+            });
+            deleteSelectedForm.submit();
+        };
+
+        const toggleSelectAll = () => {
+            if (!tableBody || !selectAll) {
+                return;
+            }
+            Array.from(tableBody.rows).forEach((row) => {
+                if (row.style.display === 'none') {
+                    return;
+                }
+                const checkbox = row.querySelector('.row-check');
+                if (checkbox) {
+                    checkbox.checked = selectAll.checked;
+                }
+            });
+        };
+
+        filterInputs.forEach((input) => {
+            input.addEventListener('input', applyFilters);
+        });
+
+        if (deleteFilteredForm) {
+            deleteFilteredForm.addEventListener('submit', (event) => {
+                event.preventDefault();
+                submitDeleteFiltered();
+            });
+        }
+
+        if (deleteSelectedForm) {
+            deleteSelectedForm.addEventListener('submit', (event) => {
+                event.preventDefault();
+                submitDeleteSelected();
+            });
+        }
+
+        if (selectAll) {
+            selectAll.addEventListener('change', toggleSelectAll);
+        }
+
+        normalizeTimestamps();
+    </script>
 </body>
 </html>

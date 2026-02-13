@@ -57,4 +57,32 @@ router.post('/dashboard/clear-all', isAuthenticated, async (req, res) => {
   }
 });
 
+// Endpoint para eliminar visitas filtradas
+router.post('/dashboard/delete-filtered', isAuthenticated, async (req, res) => {
+  try {
+    const ids = Array.isArray(req.body.ids) ? req.body.ids : (req.body.ids ? [req.body.ids] : []);
+    if (ids.length > 0) {
+      await Visit.deleteMany({ _id: { $in: ids } });
+    }
+    res.redirect('/dashboard');
+  } catch (error) {
+    console.error('Error al eliminar visitas filtradas:', error);
+    res.redirect('/dashboard');
+  }
+});
+
+// Endpoint para eliminar visitas seleccionadas
+router.post('/dashboard/delete-selected', isAuthenticated, async (req, res) => {
+  try {
+    const ids = Array.isArray(req.body.ids) ? req.body.ids : (req.body.ids ? [req.body.ids] : []);
+    if (ids.length > 0) {
+      await Visit.deleteMany({ _id: { $in: ids } });
+    }
+    res.redirect('/dashboard');
+  } catch (error) {
+    console.error('Error al eliminar visitas seleccionadas:', error);
+    res.redirect('/dashboard');
+  }
+});
+
 module.exports = router;
