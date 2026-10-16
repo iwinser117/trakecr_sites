@@ -1,6 +1,42 @@
 const express = require('express');
+const crypto = require('crypto');
 const router = express.Router();
 const Visit = require('../models/Visit');
+
+const configuredDeduplicationMinutes = Number.parseInt(
+  process.env.TRACKER_DEDUP_MINUTES || '30',
+  10
+);
+const DEDUPLICATION_MINUTES = Number.isNaN(configuredDeduplicationMinutes)
+  ? 30
+  : Math.max(0, configuredDeduplicationMinutes);
+const VISITOR_COOKIE = 'tracker_visitor_id';
+const SESSION_COOKIE = 'tracker_session_id';
+
+function getOrCreateCookie(req, res, name, maxAge) {
+  const currentValue = req.cookies && req.cookies[name];
+  const value = currentValue || crypto.randomUUID();
+
+  if (!currentValue) {
+    res.cookie(name, value, {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      maxAge
+    });
+  }
+
+  return value;
+}
+
+function getVisitorKey(req, visitorId) {
+  const ip = req.ip || req.connection.remoteAddress || 'unknown';
+  const userAgent = req.headers['user-agent'] || 'unknown';
+  const source = visitorId || `${ip}|${userAgent}`;
+  const secret = process.env.SESSION_SECRET || 'tracker-sites-visitor-key';
+
+  return crypto.createHmac('sha256', secret).update(source).digest('hex');
+}
 
 // Endpoint para recibir visitas desde otras aplicaciones
 router.post('/track', async (req, res) => {
@@ -15,13 +51,49 @@ router.post('/track', async (req, res) => {
       });
     }
 
-    // Crear nueva visita
+    const deduplicationWindowMs = DEDUPLICATION_MINUTES * 60 * 1000;
+    const visitorId = getOrCreateCookie(
+      req,
+      res,
+      VISITOR_COOKIE,
+      365 * 24 * 60 * 60 * 1000
+    );
+    const sessionId = getOrCreateCookie(
+      req,
+      res,
+      SESSION_COOKIE,
+      Math.max(deduplicationWindowMs, 60 * 1000)
+    );
+    // Si las cookies cross-origin están bloqueadas, usa el respaldo estable.
+    const visitorKey = getVisitorKey(req, req.cookies && req.cookies[VISITOR_COOKIE]);
+
+    if (deduplicationWindowMs > 0) {
+      const recentVisit = await Visit.findOne({
+        siteName,
+        url,
+        visitorKey,
+        timestamp: { $gte: new Date(Date.now() - deduplicationWindowMs) }
+      }).sort({ timestamp: -1 });
+
+      if (recentVisit) {
+        return res.status(200).json({
+          success: true,
+          duplicate: true,
+          message: 'Visita ya registrada dentro de la ventana configurada',
+          visitId: recentVisit._id,
+          sessionId
+        });
+      }
+    }
+
     const visit = new Visit({
       siteName,
       url,
       userAgent: req.headers['user-agent'],
       ipAddress: req.ip || req.connection.remoteAddress,
       referrer: req.headers['referer'] || req.headers['referrer'],
+      visitorKey,
+      sessionId,
       additionalData: additionalData || {}
     });
 
@@ -30,7 +102,9 @@ router.post('/track', async (req, res) => {
     res.status(201).json({ 
       success: true, 
       message: 'Visita registrada correctamente',
-      visitId: visit._id
+      visitId: visit._id,
+      duplicate: false,
+      sessionId
     });
   } catch (error) {
     console.error('Error al registrar visita:', error);

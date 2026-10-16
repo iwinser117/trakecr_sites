@@ -9,6 +9,7 @@ Sistema completo para recibir y visualizar visitas desde múltiples aplicaciones
 - ✅ **MongoDB** para persistencia de datos
 - ✅ **Paginación** de resultados
 - ✅ **Estadísticas** en tiempo real
+- ✅ **Deduplicación** de visitas por navegador, página y ventana de tiempo
 - ✅ **Responsive design** - funciona en móvil y desktop
 
 ## 📋 Requisitos Previos
@@ -48,6 +49,8 @@ SESSION_SECRET=cambiar_este_secreto_por_algo_seguro
 ADMIN_USERNAME=admin
 ADMIN_PASSWORD=admin123
 PORT=3000
+# Tiempo en minutos para no repetir la misma página del mismo navegador
+TRACKER_DEDUP_MINUTES=30
 ```
 
 ⚠️ **IMPORTANTE:** Cambia el usuario y contraseña por defecto antes de usar en producción.
@@ -99,12 +102,40 @@ curl -X POST http://localhost:3000/api/track \
 - User Agent
 - Referrer
 - Timestamp
+- `sessionId`: sesión anónima del navegador, renovada después de la ventana configurada
+- `visitorKey`: huella HMAC anónima para agrupar el navegador sin guardar esa huella como texto legible
+
+Por defecto, si el mismo navegador vuelve a enviar la misma `siteName` y `url` dentro de
+30 minutos, la API responde correctamente pero no crea otro documento. Configura
+`TRACKER_DEDUP_MINUTES=0` para desactivar esta deduplicación.
+
+En el dashboard, la columna **Dispositivo** muestra los primeros caracteres de
+`visitorKey`; visitas del mismo navegador normalmente compartirán ese identificador.
+
+El identificador permite reconocer principalmente el mismo navegador (mediante una cookie
+segura), no un equipo físico con certeza: puede cambiar al borrar cookies, usar incógnito,
+otro navegador o una VPN. Si la integración es cross-origin, el navegador puede bloquear la
+cookie; en ese caso el servidor usa una huella HMAC basada en IP y User-Agent como respaldo.
+No uses `sessionId` o `visitorKey` como autenticación.
 
 #### Response exitoso:
 ```json
 {
   "success": true,
   "message": "Visita registrada correctamente",
+  "visitId": "507f1f77bcf86cd799439011",
+  "duplicate": false,
+  "sessionId": "d9b2..."
+}
+```
+
+Cuando la visita ya existe dentro de la ventana:
+
+```json
+{
+  "success": true,
+  "duplicate": true,
+  "message": "Visita ya registrada dentro de la ventana configurada",
   "visitId": "507f1f77bcf86cd799439011"
 }
 ```

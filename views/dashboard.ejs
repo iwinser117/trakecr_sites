@@ -420,6 +420,7 @@
                                     <th>Sitio</th>
                                     <th>URL</th>
                                     <th>IP</th>
+                                    <th>Dispositivo</th>
                                     <th>User Agent</th>
                                     <th>Fecha/Hora</th>
                                     <th>Acciones</th>
@@ -430,8 +431,9 @@
                                     <th><input class="filter-input" data-col="2" type="text" placeholder="Filtrar sitio"></th>
                                     <th><input class="filter-input" data-col="3" type="text" placeholder="Filtrar URL"></th>
                                     <th><input class="filter-input" data-col="4" type="text" placeholder="Filtrar IP"></th>
-                                    <th><input class="filter-input" data-col="5" type="text" placeholder="Filtrar agent"></th>
-                                    <th><input class="filter-input" data-col="6" type="text" placeholder="Filtrar fecha"></th>
+                                    <th><input class="filter-input" data-col="5" type="text" placeholder="Filtrar dispositivo"></th>
+                                    <th><input class="filter-input" data-col="6" type="text" placeholder="Filtrar agent"></th>
+                                    <th><input class="filter-input" data-col="7" type="text" placeholder="Filtrar fecha"></th>
                                     <th></th>
                                 </tr>
                             </thead>
@@ -445,6 +447,9 @@
                                             <div class="url-cell"><%= visit.url %></div>
                                         </td>
                                         <td><%= (visit.ipAddress || 'N/A').replace(/^::ffff:/, '') %></td>
+                                        <td title="<%= visit.visitorKey || 'No disponible' %>">
+                                            <%= visit.visitorKey ? visit.visitorKey.slice(0, 12) : 'N/A' %>
+                                        </td>
                                         <td>
                                             <div class="user-agent"><%= visit.userAgent || 'N/A' %></div>
                                         </td>
