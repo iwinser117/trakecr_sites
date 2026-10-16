@@ -64,14 +64,18 @@ router.post('/track', async (req, res) => {
       SESSION_COOKIE,
       Math.max(deduplicationWindowMs, 60 * 1000)
     );
-    // Si las cookies cross-origin están bloqueadas, usa el respaldo estable.
+    const ipAddress = req.ip || req.connection.remoteAddress || 'unknown';
+    const userAgent = req.headers['user-agent'] || 'unknown';
+    // Si las cookies cross-origin están bloqueadas, visitorKey sigue siendo útil
+    // para agrupar el navegador, pero la deduplicación usa IP y User-Agent.
     const visitorKey = getVisitorKey(req, req.cookies && req.cookies[VISITOR_COOKIE]);
 
     if (deduplicationWindowMs > 0) {
       const recentVisit = await Visit.findOne({
         siteName,
         url,
-        visitorKey,
+        ipAddress,
+        userAgent,
         timestamp: { $gte: new Date(Date.now() - deduplicationWindowMs) }
       }).sort({ timestamp: -1 });
 
@@ -89,8 +93,8 @@ router.post('/track', async (req, res) => {
     const visit = new Visit({
       siteName,
       url,
-      userAgent: req.headers['user-agent'],
-      ipAddress: req.ip || req.connection.remoteAddress,
+      userAgent,
+      ipAddress,
       referrer: req.headers['referer'] || req.headers['referrer'],
       visitorKey,
       sessionId,

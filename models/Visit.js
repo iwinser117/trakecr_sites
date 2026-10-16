@@ -25,6 +25,6 @@ const visitSchema = new mongoose.Schema({
   }
 });
 
-visitSchema.index({ siteName: 1, url: 1, visitorKey: 1, timestamp: -1 });
+visitSchema.index({ siteName: 1, url: 1, ipAddress: 1, userAgent: 1, timestamp: -1 });
 
 module.exports = mongoose.model('Visit', visitSchema);

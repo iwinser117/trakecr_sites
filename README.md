@@ -105,8 +105,9 @@ curl -X POST http://localhost:3000/api/track \
 - `sessionId`: sesión anónima del navegador, renovada después de la ventana configurada
 - `visitorKey`: huella HMAC anónima para agrupar el navegador sin guardar esa huella como texto legible
 
-Por defecto, si el mismo navegador vuelve a enviar la misma `siteName` y `url` dentro de
-30 minutos, la API responde correctamente pero no crea otro documento. Configura
+Por defecto, si la misma IP y el mismo `User-Agent` vuelven a enviar la misma `siteName` y
+`url` dentro de 30 minutos, la API responde correctamente pero no crea otro documento.
+Configura
 `TRACKER_DEDUP_MINUTES=0` para desactivar esta deduplicación.
 
 En el dashboard, la columna **Dispositivo** muestra los primeros caracteres de
